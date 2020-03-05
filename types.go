@@ -45,10 +45,12 @@ type uniform struct {
 	url.Values
 }
 
+// Form parse `request.Form`
 type Form struct {
 	uniform
 }
 
+// PostForm parse `request.PostForm`
 type PostForm struct {
 	uniform
 }

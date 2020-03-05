@@ -14,10 +14,18 @@
 package fn
 
 import (
+	"net/http"
 	"reflect"
 )
 
-func Wrap(f interface{}) *fn {
+// Fn handler interface
+type Fn interface {
+	http.Handler
+	Plugin(before ...PluginFunc) *fn
+}
+
+// Wrap wrap handler
+func Wrap(f interface{}) Fn {
 	t := reflect.TypeOf(f)
 	if t.Kind() != reflect.Func {
 		panic("fn only support wrap a function to http.Handler")
@@ -92,6 +100,7 @@ func Wrap(f interface{}) *fn {
 	return &fn{adapter: adapter}
 }
 
+// SetErrorEncoder set error respone encoder
 func SetErrorEncoder(c ErrorEncoder) {
 	if c == nil {
 		panic("nil pointer to error encoder")
@@ -99,6 +108,7 @@ func SetErrorEncoder(c ErrorEncoder) {
 	errorEncoder = c
 }
 
+// SetResponseEncoder set respone encoder
 func SetResponseEncoder(c ResponseEncoder) {
 	if c == nil {
 		panic("nil pointer to error encoder")
@@ -106,6 +116,7 @@ func SetResponseEncoder(c ResponseEncoder) {
 	responseEncoder = c
 }
 
+// SetMultipartFormMaxMemory set multipart max memory
 func SetMultipartFormMaxMemory(m int64) {
 	maxMemory = m
 }

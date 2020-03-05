@@ -18,10 +18,12 @@ type Group struct {
 	plugins []PluginFunc
 }
 
+// NewGroup create Group
 func NewGroup() *Group {
 	return &Group{}
 }
 
+// Plugin add plugin
 func (g *Group) Plugin(plugins ...PluginFunc) *Group {
 	for _, b := range plugins {
 		if b != nil {
@@ -31,8 +33,9 @@ func (g *Group) Plugin(plugins ...PluginFunc) *Group {
 	return g
 }
 
-func (g *Group) Wrap(f interface{}) *fn {
-	n := Wrap(f)
+// Wrap group wrap handler
+func (g *Group) Wrap(f interface{}) Fn {
+	n := Wrap(f).(*fn)
 	if length := len(g.plugins); length > 0 {
 		n.plugins = make([]PluginFunc, length)
 		copy(n.plugins, g.plugins)

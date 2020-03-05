@@ -21,8 +21,10 @@ import (
 // Global plugins, such as IP filter, logs
 var globalPlugins []PluginFunc
 
+// PluginFunc plugin type
 type PluginFunc func(context.Context, *http.Request) (context.Context, error)
 
+// Plugin add to global plugin
 func Plugin(plugins ...PluginFunc) {
 	for _, a := range plugins {
 		if a != nil {

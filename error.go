@@ -18,6 +18,7 @@ type statusCodeError struct {
 	statusCode int
 }
 
+// StatusCodeError with statusCode error
 type StatusCodeError interface {
 	StatusCode() int
 }
@@ -34,6 +35,7 @@ func (s *statusCodeError) Error() string {
 	return s.err.Error()
 }
 
+// UnwrapErrorStatusCode unwrap error statusCode
 func UnwrapErrorStatusCode(err error) (int, bool) {
 	for err != nil {
 		if v, ok := err.(StatusCodeError); ok {
@@ -44,6 +46,7 @@ func UnwrapErrorStatusCode(err error) (int, bool) {
 	return 0, false
 }
 
+// ErrorWithStatusCode wrap error add statusCode
 func ErrorWithStatusCode(err error, statusCode int) error {
 	return &statusCodeError{err, statusCode}
 }

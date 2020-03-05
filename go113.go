@@ -17,6 +17,7 @@ package fn
 
 import "errors"
 
+// Unwrap unwrap error use std lib
 func Unwrap(err error) error {
 	return errors.Unwrap(err)
 }

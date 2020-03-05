@@ -74,7 +74,7 @@ func withPostForm(PostForm) (*testResponse, error)             { return successR
 func withFormPtr(*Form) (*testResponse, error)                 { return successResponse, nil }
 func withPostFormPtr(*PostForm) (*testResponse, error)         { return successResponse, nil }
 func withMultipartForm(*multipart.Form) (*testResponse, error) { return successResponse, nil }
-func withUrl(*url.URL) (*testResponse, error)                  { return successResponse, nil }
+func withURL(*url.URL) (*testResponse, error)                  { return successResponse, nil }
 func withRawRequest(*http.Request) (*testResponse, error)      { return successResponse, nil }
 
 func withInContext(context.Context) (*testResponse, error) { return successResponse, nil }
@@ -100,7 +100,7 @@ func (s *fnSuite) TestHandler(c *C) {
 	Wrap(withFormPtr)
 	Wrap(withPostFormPtr)
 	Wrap(withMultipartForm)
-	Wrap(withUrl)
+	Wrap(withURL)
 	Wrap(withRawRequest)
 	Wrap(withMulti)
 	Wrap(withAll)

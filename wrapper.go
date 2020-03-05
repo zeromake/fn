@@ -49,7 +49,7 @@ func failure(ctx context.Context, w http.ResponseWriter, err error) {
 }
 
 func success(ctx context.Context, w http.ResponseWriter, data interface{}) {
-	if data == nil || (reflect.ValueOf(data).Kind() == reflect.Ptr && reflect.ValueOf(data).IsNil()) {
+	if reflect.ValueOf(data).Kind() == reflect.Ptr && reflect.ValueOf(data).IsNil() {
 		w.WriteHeader(http.StatusNoContent)
 	} else {
 		_ = json.NewEncoder(w).Encode(responseEncoder(ctx, data))
