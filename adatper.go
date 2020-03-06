@@ -65,7 +65,7 @@ func makeGenericAdapter(method reflect.Value, inContext bool) *genericAdapter {
 
 	for i := 0; i < numIn; i++ {
 		in := t.In(i)
-		if in != contextType && !isBuiltinType(in) {
+		if in != contextType && !isBuiltinType(in) && !isRequestType(in) {
 			if noSupportExists {
 				panic("function should accept only one customize type")
 			}
@@ -94,6 +94,14 @@ func (a *genericAdapter) invoke(ctx context.Context, w http.ResponseWriter, r *h
 			values[i] = value
 		} else if typ == contextType {
 			values[i] = reflect.ValueOf(ctx)
+		} else if isRequestType(typ) {
+			// Todo whether priority should be adjusted
+			vv := supportRequestTypes[typ]
+			value, err := vv(ctx, r)
+			if err != nil {
+				return nil, err
+			}
+			values[i] = value
 		} else {
 			d := reflect.New(a.types[i].Elem()).Interface()
 			err := json.NewDecoder(r.Body).Decode(d)

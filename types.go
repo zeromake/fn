@@ -24,7 +24,13 @@ import (
 
 type valuer func(r *http.Request) (reflect.Value, error)
 
-var contextType = reflect.TypeOf((*context.Context)(nil)).Elem()
+var (
+	contextType = reflect.TypeOf((*context.Context)(nil)).Elem()
+	requestType = reflect.TypeOf((*http.Request)(nil))
+	errorType = reflect.TypeOf((*error)(nil)).Elem()
+)
+
+type contextValuer func(ctx context.Context, r *http.Request) (reflect.Value, error)
 
 // BenchmarkIsBuiltinType-8   	100000000	        23.1 ns/op	       0 B/op	       0 allocs/op
 var supportTypes = map[reflect.Type]valuer{
@@ -38,6 +44,7 @@ var supportTypes = map[reflect.Type]valuer{
 	reflect.TypeOf((*multipart.Form)(nil)):       multipartValuer,   // request.MultipartForm
 	reflect.TypeOf((*http.Request)(nil)):         requestValuer,     // raw request
 }
+var supportRequestTypes = map[reflect.Type]contextValuer{}
 
 var maxMemory = int64(2 * 1024 * 1024)
 
@@ -113,5 +120,10 @@ func requestValuer(r *http.Request) (reflect.Value, error) {
 
 func isBuiltinType(t reflect.Type) bool {
 	_, ok := supportTypes[t]
+	return ok
+}
+
+func isRequestType(t reflect.Type) bool {
+	_, ok := supportRequestTypes[t]
 	return ok
 }

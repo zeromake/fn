@@ -14,6 +14,7 @@
 package fn
 
 import (
+	"context"
 	"net/http"
 	"reflect"
 )
@@ -76,7 +77,7 @@ func Wrap(f interface{}) Fn {
 			method:    reflect.ValueOf(f),
 			cacheArgs: make([]reflect.Value, 1),
 		}
-	} else if numIn == 1 && !isBuiltinType(t.In(0)) && t.In(0).Kind() == reflect.Ptr {
+	} else if numIn == 1 && !isBuiltinType(t.In(0)) && !isRequestType(t.In(0)) && t.In(0).Kind() == reflect.Ptr {
 		// func(request *Customized) (Response, error)
 		adapter = &simpleUnaryAdapter{
 			argType:   t.In(0),
@@ -119,4 +120,30 @@ func SetResponseEncoder(c ResponseEncoder) {
 // SetMultipartFormMaxMemory set multipart max memory
 func SetMultipartFormMaxMemory(m int64) {
 	maxMemory = m
+}
+
+// SetRequestPlugin set request plugin func (ctx context.Context, r *http.Request) ({{data}}, error)
+func SetRequestPlugin(p interface{})  {
+	if p == nil {
+		return
+	}
+	vv := reflect.ValueOf(p)
+	t := vv.Type()
+	if t.Kind() != reflect.Func || t.NumOut() != 2 || t.NumIn() != 2 {
+		panic("request plugin is func (ctx context.Context, r *http.Request) ({{data}}, error)")
+	}
+	switch {
+		case t.In(0) != contextType, t.In(1) != requestType:
+			panic("param must is context.Context, *http.Request")
+		case t.Out(1) != errorType:
+			panic("return must is {{data}}, error")
+	}
+	out := t.Out(0)
+	supportRequestTypes[out] = func(ctx context.Context, r *http.Request) (value reflect.Value, err error) {
+		v := vv.Call([]reflect.Value{reflect.ValueOf(ctx), reflect.ValueOf(r)})
+		if v[1].IsNil() {
+			return v[0], nil
+		}
+		return v[0], v[1].Interface().(error)
+	}
 }

@@ -240,6 +240,28 @@ func (s *fnSuite) TestErrorWithStatusCode(c *C) {
 	c.Assert(recorder.Code == http.StatusNotFound, IsTrue)
 }
 
+func (s *fnSuite) TestRequestPlugin(c *C) {
+	SetResponseEncoder(func(ctx context.Context, payload interface{}) interface{} {
+		return payload
+	})
+	SetRequestPlugin(func(ctx context.Context, r *http.Request) (url.Values, error) {
+		return r.URL.Query(), nil
+	})
+
+	handler := Wrap(func(query url.Values) (string, error) {
+		return query.Get("test"), nil
+	})
+	request, err := http.NewRequest(http.MethodGet, "/?test=1", nil)
+	if err != nil {
+		c.Fatal(err)
+	}
+	recorder := httptest.NewRecorder()
+	handler.ServeHTTP(recorder, request)
+
+	b := recorder.Body.Bytes()
+	c.Assert(reflect.DeepEqual(b, []byte("\"1\"\n")), IsTrue)
+}
+
 func BenchmarkSimplePlainAdapter_Invoke(b *testing.B) {
 	handler := Wrap(withNone)
 	request, err := http.NewRequest(http.MethodGet, "", nil)
