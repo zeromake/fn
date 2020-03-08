@@ -44,7 +44,7 @@ type simplePlainAdapter struct {
 
 // Accept only one parameter adapter
 type simpleUnaryAdapter struct {
-	outContext bool
+	//outContext bool
 	argType    reflect.Type
 	method     reflect.Value
 	cacheArgs  []reflect.Value // cache args

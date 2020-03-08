@@ -199,7 +199,7 @@ func (s *fnSuite) TestSetErrorEncoder(c *C) {
 	c.Assert(reflect.DeepEqual(respMsg, testErrorResp), IsTrue)
 }
 
-func (s *fnSuite) TestGenericAdapter_Invoke(c *C) {
+func (s *fnSuite) TestGenericAdapterInvoke(c *C) {
 	type CustomForm testRequest
 	handler := Wrap(func(ctx context.Context, form *CustomForm) (context.Context, error) {
 		return nil, nil
@@ -214,7 +214,7 @@ func (s *fnSuite) TestGenericAdapter_Invoke(c *C) {
 	handler.ServeHTTP(recorder, request)
 }
 
-func (s *fnSuite) TestSimpleUnaryAdapter_Invoke(c *C) {
+func (s *fnSuite) TestSimpleUnaryAdapterInvoke(c *C) {
 	handler := Wrap(withReq)
 
 	recorder := httptest.NewRecorder()
@@ -276,7 +276,7 @@ func BenchmarkSimplePlainAdapter_Invoke(b *testing.B) {
 	}
 }
 
-func BenchmarkSimpleUnaryAdapter_Invoke(b *testing.B) {
+func BenchmarkSimpleUnaryAdapterInvoke(b *testing.B) {
 	handler := Wrap(withReq)
 	request, err := http.NewRequest(http.MethodGet, "", nil)
 	if err != nil {
@@ -292,7 +292,7 @@ func BenchmarkSimpleUnaryAdapter_Invoke(b *testing.B) {
 	}
 }
 
-func BenchmarkGenericAdapter_Invoke(b *testing.B) {
+func BenchmarkGenericAdapterInvoke(b *testing.B) {
 	handler := Wrap(withMulti)
 	request, err := http.NewRequest(http.MethodGet, "", nil)
 	if err != nil {
