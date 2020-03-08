@@ -51,10 +51,6 @@ func wrapCheckType(t reflect.Type) (int, bool) {
 				if i != 0 {
 					panic("the `context.Context` must be the first parameter if the signature contains `context.Context`")
 				}
-				// Illegal: func(..., ctx context.Context, ..., ctx2 context.Context) ...
-				if inContext {
-					panic("the function can receive two `context.Context`")
-				}
 				inContext = true
 			}
 		}
