@@ -262,7 +262,7 @@ func (s *fnSuite) TestRequestPlugin(c *C) {
 	c.Assert(reflect.DeepEqual(b, []byte("\"1\"\n")), IsTrue)
 }
 
-func BenchmarkSimplePlainAdapter_Invoke(b *testing.B) {
+func BenchmarkSimplePlainAdapterInvoke(b *testing.B) {
 	handler := Wrap(withNone)
 	request, err := http.NewRequest(http.MethodGet, "", nil)
 	if err != nil {
