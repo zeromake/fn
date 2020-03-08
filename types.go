@@ -27,7 +27,7 @@ type valuer func(r *http.Request) (reflect.Value, error)
 var (
 	contextType = reflect.TypeOf((*context.Context)(nil)).Elem()
 	requestType = reflect.TypeOf((*http.Request)(nil))
-	errorType = reflect.TypeOf((*error)(nil)).Elem()
+	errorType   = reflect.TypeOf((*error)(nil)).Elem()
 )
 
 type contextValuer func(ctx context.Context, r *http.Request) (reflect.Value, error)

@@ -45,9 +45,9 @@ type simplePlainAdapter struct {
 // Accept only one parameter adapter
 type simpleUnaryAdapter struct {
 	//outContext bool
-	argType    reflect.Type
-	method     reflect.Value
-	cacheArgs  []reflect.Value // cache args
+	argType   reflect.Type
+	method    reflect.Value
+	cacheArgs []reflect.Value // cache args
 }
 
 func makeGenericAdapter(method reflect.Value, inContext bool) *genericAdapter {
@@ -81,38 +81,46 @@ func makeGenericAdapter(method reflect.Value, inContext bool) *genericAdapter {
 	return a
 }
 
-func (a *genericAdapter) invoke(ctx context.Context, w http.ResponseWriter, r *http.Request) (interface{}, error) {
-	values := a.cacheArgs
+// invokeParams params handler
+func (a *genericAdapter) invokeParams(ctx context.Context, r *http.Request) ([]reflect.Value, error)  {
+	var (
+		values = a.cacheArgs
+		value reflect.Value
+		err error
+	)
 	for i := 0; i < a.numIn; i++ {
 		typ := a.types[i]
 		v, ok := supportTypes[typ]
 		if ok {
-			value, err := v(r)
-			if err != nil {
-				return nil, err
-			}
-			values[i] = value
+			// support type param
+			value, err = v(r)
 		} else if typ == contextType {
-			values[i] = reflect.ValueOf(ctx)
+			// context type param
+			value = reflect.ValueOf(ctx)
 		} else if isRequestType(typ) {
-			// Todo whether priority should be adjusted
+			// request plugin support param plugin
+			// whether priority should be adjusted
 			vv := supportRequestTypes[typ]
-			value, err := vv(ctx, r)
-			if err != nil {
-				return nil, err
-			}
-			values[i] = value
+			value, err = vv(ctx, r)
 		} else {
-			d := reflect.New(a.types[i].Elem()).Interface()
-			err := json.NewDecoder(r.Body).Decode(d)
-			if err != nil {
-				return nil, err
+			// *struct
+			d := reflect.New(typ.Elem()).Interface()
+			err = json.NewDecoder(r.Body).Decode(d)
+			if err == nil {
+				value = reflect.ValueOf(d)
 			}
-			values[i] = reflect.ValueOf(d)
 		}
+		if err != nil {
+			return nil, err
+		}
+		values[i] = value
 	}
+	return values, nil
+}
 
-	var err error
+func (a *genericAdapter) invoke(ctx context.Context, w http.ResponseWriter, r *http.Request) (interface{}, error) {
+	values, err := a.invokeParams(ctx, r)
+
 	results := a.method.Call(values)
 	payload := results[0].Interface()
 	if e := results[1].Interface(); e != nil {

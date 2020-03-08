@@ -25,9 +25,7 @@ type Fn interface {
 	Plugin(before ...PluginFunc) *fn
 }
 
-// Wrap wrap handler
-func Wrap(f interface{}) Fn {
-	t := reflect.TypeOf(f)
+func wrapCheckType(t reflect.Type) (int, bool) {
 	if t.Kind() != reflect.Func {
 		panic("fn only support wrap a function to http.Handler")
 	}
@@ -41,7 +39,6 @@ func Wrap(f interface{}) Fn {
 	}
 
 	var (
-		adapter   adapter
 		numIn     = t.NumIn()
 		inContext = false
 	)
@@ -62,6 +59,16 @@ func Wrap(f interface{}) Fn {
 			}
 		}
 	}
+	return numIn, inContext
+}
+
+// Wrap wrap handler
+func Wrap(f interface{}) Fn {
+	t := reflect.TypeOf(f)
+	var (
+		adapter   adapter
+		numIn, inContext = wrapCheckType(t)
+	)
 
 	if numIn == 0 {
 		// func() (Response, error)
@@ -122,8 +129,8 @@ func SetMultipartFormMaxMemory(m int64) {
 	maxMemory = m
 }
 
-// SetRequestPlugin set request plugin func (ctx context.Context, r *http.Request) ({{data}}, error)
-func SetRequestPlugin(p interface{})  {
+// RequestPlugin set request plugin func (ctx context.Context, r *http.Request) ({{data}}, error)
+func RequestPlugin(p interface{}) {
 	if p == nil {
 		return
 	}
@@ -133,10 +140,10 @@ func SetRequestPlugin(p interface{})  {
 		panic("request plugin is func (ctx context.Context, r *http.Request) ({{data}}, error)")
 	}
 	switch {
-		case t.In(0) != contextType, t.In(1) != requestType:
-			panic("param must is context.Context, *http.Request")
-		case t.Out(1) != errorType:
-			panic("return must is {{data}}, error")
+	case t.In(0) != contextType, t.In(1) != requestType:
+		panic("param must is context.Context, *http.Request")
+	case t.Out(1) != errorType:
+		panic("return must is {{data}}, error")
 	}
 	out := t.Out(0)
 	supportRequestTypes[out] = func(ctx context.Context, r *http.Request) (value reflect.Value, err error) {

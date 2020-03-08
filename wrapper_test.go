@@ -244,7 +244,7 @@ func (s *fnSuite) TestRequestPlugin(c *C) {
 	SetResponseEncoder(func(ctx context.Context, payload interface{}) interface{} {
 		return payload
 	})
-	SetRequestPlugin(func(ctx context.Context, r *http.Request) (url.Values, error) {
+	RequestPlugin(func(ctx context.Context, r *http.Request) (url.Values, error) {
 		return r.URL.Query(), nil
 	})
 
