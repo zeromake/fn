@@ -82,11 +82,11 @@ func makeGenericAdapter(method reflect.Value, inContext bool) *genericAdapter {
 }
 
 // invokeParams params handler
-func (a *genericAdapter) invokeParams(ctx context.Context, r *http.Request) ([]reflect.Value, error)  {
+func (a *genericAdapter) invokeParams(ctx context.Context, r *http.Request) ([]reflect.Value, error) {
 	var (
 		values = a.cacheArgs
-		value reflect.Value
-		err error
+		value  reflect.Value
+		err    error
 	)
 	for i := 0; i < a.numIn; i++ {
 		typ := a.types[i]

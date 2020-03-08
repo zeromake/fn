@@ -62,7 +62,7 @@ func wrapCheckType(t reflect.Type) (int, bool) {
 func Wrap(f interface{}) Fn {
 	t := reflect.TypeOf(f)
 	var (
-		adapter   adapter
+		adapter          adapter
 		numIn, inContext = wrapCheckType(t)
 	)
 
