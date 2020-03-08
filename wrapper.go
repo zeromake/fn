@@ -29,7 +29,8 @@ type (
 
 	// fn represents a handler that contains a bundle of hooks
 	fn struct {
-		plugins []PluginFunc
+		container *Container
+		//plugins []PluginFunc
 		adapter adapter
 	}
 )
@@ -64,22 +65,13 @@ func (fn *fn) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		resp interface{}
 	)
 
-	for _, b := range globalPlugins {
+	for _, b := range fn.container.plugins {
 		ctx, err = b(ctx, r)
 		if err != nil {
 			failure(ctx, w, err)
 			return
 		}
 	}
-
-	for _, b := range fn.plugins {
-		ctx, err = b(ctx, r)
-		if err != nil {
-			failure(ctx, w, err)
-			return
-		}
-	}
-
 	resp, err = fn.adapter.invoke(ctx, w, r)
 	if err != nil {
 		failure(ctx, w, err)
@@ -89,11 +81,7 @@ func (fn *fn) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 }
 
 func (fn *fn) Plugin(before ...PluginFunc) *fn {
-	for _, b := range before {
-		if b != nil {
-			fn.plugins = append(fn.plugins, b)
-		}
-	}
+	fn.container.Plugin(before...)
 	return fn
 }
 

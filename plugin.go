@@ -26,9 +26,10 @@ type PluginFunc func(context.Context, *http.Request) (context.Context, error)
 
 // Plugin add to global plugin
 func Plugin(plugins ...PluginFunc) {
-	for _, a := range plugins {
-		if a != nil {
-			globalPlugins = append(globalPlugins, a)
-		}
-	}
+	globalContainer.Plugin(plugins...)
+	//for _, a := range plugins {
+	//	if a != nil {
+	//		globalPlugins = append(globalPlugins, a)
+	//	}
+	//}
 }

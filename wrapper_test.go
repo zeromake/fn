@@ -218,7 +218,7 @@ func (s *fnSuite) TestSimpleUnaryAdapterInvoke(c *C) {
 	handler := Wrap(withReq)
 
 	recorder := httptest.NewRecorder()
-	request, err := http.NewRequest(http.MethodGet, "", nil)
+	request, err := http.NewRequestWithContext(context.Background(), http.MethodGet, "", nil)
 	if err != nil {
 		c.Fatal(err)
 	}
@@ -260,6 +260,35 @@ func (s *fnSuite) TestRequestPlugin(c *C) {
 
 	b := recorder.Body.Bytes()
 	c.Assert(reflect.DeepEqual(b, []byte("\"1\"\n")), IsTrue)
+}
+
+type tokenPayload struct {
+	ID int64
+}
+
+func (s *fnSuite) TestRequestPluginWithContext(c *C) {
+	Plugin(func(ctx context.Context, r *http.Request) (context.Context, error) {
+		ctx = context.WithValue(ctx, "token", &tokenPayload{
+			ID: 5,
+		})
+		return ctx, nil
+	})
+	RequestPlugin(func(ctx context.Context, r *http.Request) (*tokenPayload, error) {
+		return ctx.Value("token").(*tokenPayload), nil
+	})
+
+	handler := Wrap(func(payload *tokenPayload) (int64, error) {
+		return payload.ID, nil
+	})
+	request, err := http.NewRequest(http.MethodGet, "/", nil)
+	if err != nil {
+		c.Fatal(err)
+	}
+	recorder := httptest.NewRecorder()
+	handler.ServeHTTP(recorder, request)
+
+	b := recorder.Body.Bytes()
+	c.Assert(reflect.DeepEqual(b, []byte("5\n")), IsTrue)
 }
 
 func BenchmarkSimplePlainAdapterInvoke(b *testing.B) {

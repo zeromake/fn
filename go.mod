@@ -1,4 +1,4 @@
-module github.com/pingcap/fn
+module github.com/zeromake/fn
 
 go 1.11
 

@@ -22,7 +22,7 @@ import (
 	"reflect"
 )
 
-type valuer func(r *http.Request) (reflect.Value, error)
+//type valuer func(r *http.Request) (reflect.Value, error)
 
 var (
 	contextType = reflect.TypeOf((*context.Context)(nil)).Elem()
@@ -33,7 +33,7 @@ var (
 type contextValuer func(ctx context.Context, r *http.Request) (reflect.Value, error)
 
 // BenchmarkIsBuiltinType-8   	100000000	        23.1 ns/op	       0 B/op	       0 allocs/op
-var supportTypes = map[reflect.Type]valuer{
+var supportTypes = map[reflect.Type]contextValuer{
 	reflect.TypeOf((*io.ReadCloser)(nil)).Elem(): bodyValuer,        // request.Body
 	reflect.TypeOf((http.Header)(nil)):           headerValuer,      // request.Header
 	reflect.TypeOf(Form{}):                       formValuer,        // request.Form
@@ -44,7 +44,8 @@ var supportTypes = map[reflect.Type]valuer{
 	reflect.TypeOf((*multipart.Form)(nil)):       multipartValuer,   // request.MultipartForm
 	reflect.TypeOf((*http.Request)(nil)):         requestValuer,     // raw request
 }
-var supportRequestTypes = map[reflect.Type]contextValuer{}
+
+//var supportRequestTypes = map[reflect.Type]contextValuer{}
 
 var maxMemory = int64(2 * 1024 * 1024)
 
@@ -62,19 +63,19 @@ type PostForm struct {
 	uniform
 }
 
-func bodyValuer(r *http.Request) (reflect.Value, error) {
+func bodyValuer(_ context.Context, r *http.Request) (reflect.Value, error) {
 	return reflect.ValueOf(r.Body), nil
 }
 
-func urlValuer(r *http.Request) (reflect.Value, error) {
+func urlValuer(_ context.Context, r *http.Request) (reflect.Value, error) {
 	return reflect.ValueOf(r.URL), nil
 }
 
-func headerValuer(r *http.Request) (reflect.Value, error) {
+func headerValuer(_ context.Context, r *http.Request) (reflect.Value, error) {
 	return reflect.ValueOf(r.Header), nil
 }
 
-func multipartValuer(r *http.Request) (reflect.Value, error) {
+func multipartValuer(_ context.Context, r *http.Request) (reflect.Value, error) {
 	err := r.ParseMultipartForm(maxMemory)
 	if err != nil {
 		return reflect.Value{}, err
@@ -82,7 +83,7 @@ func multipartValuer(r *http.Request) (reflect.Value, error) {
 	return reflect.ValueOf(r.MultipartForm), nil
 }
 
-func formValuer(r *http.Request) (reflect.Value, error) {
+func formValuer(_ context.Context, r *http.Request) (reflect.Value, error) {
 	err := r.ParseForm()
 	if err != nil {
 		return reflect.Value{}, nil
@@ -90,7 +91,7 @@ func formValuer(r *http.Request) (reflect.Value, error) {
 	return reflect.ValueOf(Form{uniform{r.Form}}), nil
 }
 
-func postFromValuer(r *http.Request) (reflect.Value, error) {
+func postFromValuer(_ context.Context, r *http.Request) (reflect.Value, error) {
 	err := r.ParseForm()
 	if err != nil {
 		return reflect.Value{}, nil
@@ -98,7 +99,7 @@ func postFromValuer(r *http.Request) (reflect.Value, error) {
 	return reflect.ValueOf(PostForm{uniform{r.PostForm}}), nil
 }
 
-func formPtrValuer(r *http.Request) (reflect.Value, error) {
+func formPtrValuer(_ context.Context, r *http.Request) (reflect.Value, error) {
 	err := r.ParseForm()
 	if err != nil {
 		return reflect.Value{}, nil
@@ -106,7 +107,7 @@ func formPtrValuer(r *http.Request) (reflect.Value, error) {
 	return reflect.ValueOf(&Form{uniform{r.Form}}), nil
 }
 
-func postFromPtrValuer(r *http.Request) (reflect.Value, error) {
+func postFromPtrValuer(_ context.Context, r *http.Request) (reflect.Value, error) {
 	err := r.ParseForm()
 	if err != nil {
 		return reflect.Value{}, nil
@@ -114,16 +115,16 @@ func postFromPtrValuer(r *http.Request) (reflect.Value, error) {
 	return reflect.ValueOf(&PostForm{uniform{r.PostForm}}), nil
 }
 
-func requestValuer(r *http.Request) (reflect.Value, error) {
+func requestValuer(_ context.Context, r *http.Request) (reflect.Value, error) {
 	return reflect.ValueOf(r), nil
 }
 
-func isBuiltinType(t reflect.Type) bool {
-	_, ok := supportTypes[t]
-	return ok
-}
-
-func isRequestType(t reflect.Type) bool {
-	_, ok := supportRequestTypes[t]
-	return ok
-}
+//func isBuiltinType(t reflect.Type) bool {
+//	_, ok := supportTypes[t]
+//	return ok
+//}
+//
+//func isRequestType(t reflect.Type) bool {
+//	_, ok := supportRequestTypes[t]
+//	return ok
+//}

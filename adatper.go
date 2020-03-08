@@ -28,6 +28,7 @@ type adapter interface {
 
 // genericAdapter represents a common adapter
 type genericAdapter struct {
+	container *Container
 	inContext bool
 	method    reflect.Value
 	numIn     int
@@ -50,12 +51,13 @@ type simpleUnaryAdapter struct {
 	cacheArgs []reflect.Value // cache args
 }
 
-func makeGenericAdapter(method reflect.Value, inContext bool) *genericAdapter {
+func makeGenericAdapter(c *Container, method reflect.Value, inContext bool) *genericAdapter {
 	var noSupportExists = false
 	t := method.Type()
 	numIn := t.NumIn()
 
 	a := &genericAdapter{
+		container: c,
 		inContext: inContext,
 		method:    method,
 		numIn:     numIn,
@@ -65,7 +67,7 @@ func makeGenericAdapter(method reflect.Value, inContext bool) *genericAdapter {
 
 	for i := 0; i < numIn; i++ {
 		in := t.In(i)
-		if in != contextType && !isBuiltinType(in) && !isRequestType(in) {
+		if in != contextType && !a.container.isBuiltinType(in) {
 			if noSupportExists {
 				panic("function should accept only one customize type")
 			}
@@ -90,18 +92,13 @@ func (a *genericAdapter) invokeParams(ctx context.Context, r *http.Request) ([]r
 	)
 	for i := 0; i < a.numIn; i++ {
 		typ := a.types[i]
-		v, ok := supportTypes[typ]
+		v, ok := a.container.builtinType(typ)
 		if ok {
 			// support type param
-			value, err = v(r)
+			value, err = v(ctx, r)
 		} else if typ == contextType {
 			// context type param
 			value = reflect.ValueOf(ctx)
-		} else if isRequestType(typ) {
-			// request plugin support param plugin
-			// whether priority should be adjusted
-			vv := supportRequestTypes[typ]
-			value, err = vv(ctx, r)
 		} else {
 			// *struct
 			d := reflect.New(typ.Elem()).Interface()

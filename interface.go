@@ -14,9 +14,14 @@
 package fn
 
 import (
-	"context"
 	"net/http"
 	"reflect"
+)
+
+var (
+	globalContainer = &Container{
+		supportTypes:        supportTypes,
+	}
 )
 
 // Fn handler interface
@@ -60,48 +65,7 @@ func wrapCheckType(t reflect.Type) (int, bool) {
 
 // Wrap wrap handler
 func Wrap(f interface{}) Fn {
-	t := reflect.TypeOf(f)
-	var (
-		adapter          adapter
-		numIn, inContext = wrapCheckType(t)
-	)
-
-	if numIn == 0 {
-		// func() (Response, error)
-		adapter = &simplePlainAdapter{
-			inContext: false,
-			method:    reflect.ValueOf(f),
-			cacheArgs: []reflect.Value{},
-		}
-	} else if numIn == 1 && inContext {
-		// func(ctx context.Context) (Response, error)
-		adapter = &simplePlainAdapter{
-			inContext: true,
-			method:    reflect.ValueOf(f),
-			cacheArgs: make([]reflect.Value, 1),
-		}
-	} else if numIn == 1 && !isBuiltinType(t.In(0)) && !isRequestType(t.In(0)) && t.In(0).Kind() == reflect.Ptr {
-		// func(request *Customized) (Response, error)
-		adapter = &simpleUnaryAdapter{
-			argType:   t.In(0),
-			method:    reflect.ValueOf(f),
-			cacheArgs: make([]reflect.Value, 1),
-		}
-	} else {
-		// Complicated signatures
-		//
-		// e.g:
-		// type LoginResponse {...}
-		// type LoginRequest {...}
-		//
-		// func (header http.Header) (*LoginResponse, error) {}
-		// func (form fn.Form) (*LoginResponse, error) {}
-		// func (header http.Header, form fn.Form, body io.ReadCloser) (*LoginResponse, error) {}
-		// func (header http.Header, r *LoginRequest, url *url.URL) (*LoginResponse, error) { }
-		adapter = makeGenericAdapter(reflect.ValueOf(f), inContext)
-	}
-
-	return &fn{adapter: adapter}
+	return globalContainer.Wrap(f)
 }
 
 // SetErrorEncoder set error respone encoder
@@ -126,27 +90,6 @@ func SetMultipartFormMaxMemory(m int64) {
 }
 
 // RequestPlugin set request plugin func (ctx context.Context, r *http.Request) ({{data}}, error)
-func RequestPlugin(p interface{}) {
-	if p == nil {
-		return
-	}
-	vv := reflect.ValueOf(p)
-	t := vv.Type()
-	if t.Kind() != reflect.Func || t.NumOut() != 2 || t.NumIn() != 2 {
-		panic("request plugin is func (ctx context.Context, r *http.Request) ({{data}}, error)")
-	}
-	switch {
-	case t.In(0) != contextType, t.In(1) != requestType:
-		panic("param must is context.Context, *http.Request")
-	case t.Out(1) != errorType:
-		panic("return must is {{data}}, error")
-	}
-	out := t.Out(0)
-	supportRequestTypes[out] = func(ctx context.Context, r *http.Request) (value reflect.Value, err error) {
-		v := vv.Call([]reflect.Value{reflect.ValueOf(ctx), reflect.ValueOf(r)})
-		if v[1].IsNil() {
-			return v[0], nil
-		}
-		return v[0], v[1].Interface().(error)
-	}
+func RequestPlugin(p interface{}) *Container {
+	return globalContainer.RequestPlugin(p)
 }

@@ -23,6 +23,6 @@ func BenchmarkIsBuiltinType(b *testing.B) {
 	b.ResetTimer()
 	typ := reflect.TypeOf((*Form)(nil))
 	for i := 0; i < b.N; i++ {
-		isBuiltinType(typ)
+		globalContainer.isBuiltinType(typ)
 	}
 }
