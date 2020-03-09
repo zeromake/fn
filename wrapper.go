@@ -57,7 +57,7 @@ func success(ctx context.Context, w http.ResponseWriter, data interface{}) {
 	}
 }
 
-func (fn *fn) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+func (f *fn) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json; charset=utf-8")
 	var (
 		ctx  = r.Context()
@@ -65,14 +65,14 @@ func (fn *fn) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		resp interface{}
 	)
 
-	for _, b := range fn.container.plugins {
+	for _, b := range f.container.plugins {
 		ctx, err = b(ctx, r)
 		if err != nil {
 			failure(ctx, w, err)
 			return
 		}
 	}
-	resp, err = fn.adapter.invoke(ctx, w, r)
+	resp, err = f.adapter.invoke(ctx, w, r)
 	if err != nil {
 		failure(ctx, w, err)
 		return
@@ -80,9 +80,18 @@ func (fn *fn) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	success(ctx, w, resp)
 }
 
-func (fn *fn) Plugin(before ...PluginFunc) *fn {
-	fn.container.Plugin(before...)
-	return fn
+func (f *fn) Plugin(before ...PluginFunc) Fn {
+	ff := f.Clone()
+	ff.container.Plugin(before...)
+	return ff
+}
+
+func (f *fn) Clone() *fn {
+	c := f.container.New(true)
+	return &fn{
+		container: c,
+		adapter:   f.adapter.clone(c),
+	}
 }
 
 func init() {

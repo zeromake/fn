@@ -24,6 +24,7 @@ import (
 // and convert a it to a http.Handler
 type adapter interface {
 	invoke(context.Context, http.ResponseWriter, *http.Request) (interface{}, error)
+	clone(c *Container) adapter
 }
 
 // genericAdapter represents a common adapter
@@ -115,6 +116,17 @@ func (a *genericAdapter) invokeParams(ctx context.Context, r *http.Request) ([]r
 	return values, nil
 }
 
+func (a *genericAdapter) clone(container *Container) adapter {
+	return &genericAdapter{
+		container: container,
+		inContext: a.inContext,
+		method:    a.method,
+		numIn:     a.numIn,
+		types:     a.types[:],
+		cacheArgs: a.cacheArgs[:],
+	}
+}
+
 func (a *genericAdapter) invoke(ctx context.Context, w http.ResponseWriter, r *http.Request) (interface{}, error) {
 	values, err := a.invokeParams(ctx, r)
 
@@ -140,6 +152,14 @@ func (a *simplePlainAdapter) invoke(ctx context.Context, w http.ResponseWriter, 
 	return payload, err
 }
 
+func (a *simplePlainAdapter) clone(_ *Container) adapter {
+	return &simplePlainAdapter{
+		inContext: a.inContext,
+		method: a.method,
+		cacheArgs: a.cacheArgs[:],
+	}
+}
+
 func (a *simpleUnaryAdapter) invoke(ctx context.Context, w http.ResponseWriter, r *http.Request) (interface{}, error) {
 	data := reflect.New(a.argType.Elem()).Interface()
 	err := json.NewDecoder(r.Body).Decode(data)
@@ -154,4 +174,12 @@ func (a *simpleUnaryAdapter) invoke(ctx context.Context, w http.ResponseWriter, 
 		err = e.(error)
 	}
 	return payload, err
+}
+
+func (a *simpleUnaryAdapter) clone(_ *Container) adapter {
+	return &simpleUnaryAdapter{
+		argType: a.argType,
+		method: a.method,
+		cacheArgs: a.cacheArgs[:],
+	}
 }

@@ -19,7 +19,7 @@ import (
 )
 
 // Global plugins, such as IP filter, logs
-var globalPlugins []PluginFunc
+//var globalPlugins []PluginFunc
 
 // PluginFunc plugin type
 type PluginFunc func(context.Context, *http.Request) (context.Context, error)

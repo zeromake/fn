@@ -20,14 +20,14 @@ import (
 
 var (
 	globalContainer = &Container{
-		supportTypes:        supportTypes,
+		supportTypes: supportTypes,
 	}
 )
 
 // Fn handler interface
 type Fn interface {
 	http.Handler
-	Plugin(before ...PluginFunc) *fn
+	Plugin(before ...PluginFunc) Fn
 }
 
 func wrapCheckType(t reflect.Type) (int, bool) {

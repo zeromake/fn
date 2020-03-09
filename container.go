@@ -7,10 +7,10 @@ import (
 )
 
 type (
-	supportType        map[reflect.Type]contextValuer
-	Container          struct {
-		plugins             []PluginFunc
-		supportTypes        supportType
+	supportType map[reflect.Type]contextValuer
+	Container   struct {
+		plugins      []PluginFunc
+		supportTypes supportType
 	}
 )
 
@@ -25,8 +25,8 @@ func (s supportType) Clone() supportType {
 func (c *Container) New(extend bool) *Container {
 	if extend {
 		return &Container{
-			plugins:             c.plugins[:],
-			supportTypes:        c.supportTypes.Clone(),
+			plugins:      c.plugins[:],
+			supportTypes: c.supportTypes.Clone(),
 		}
 	}
 	return &Container{}
@@ -127,7 +127,5 @@ func NewGroup() *Container {
 }
 
 func NewContainer() *Container {
-	return &Container{
-		supportTypes:        supportType{},
-	}
+	return globalContainer.New(false)
 }
