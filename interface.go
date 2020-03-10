@@ -19,10 +19,12 @@ import (
 )
 
 var (
-	globalContainer = &Container{
-		supportTypes: supportTypes,
-	}
+	globalContainer = New()
 )
+
+func init() {
+	globalContainer.RequestPlugin(supportTypes...)
+}
 
 // Fn handler interface
 type Fn interface {
@@ -68,20 +70,14 @@ func Wrap(f interface{}) Fn {
 	return globalContainer.Wrap(f)
 }
 
-// SetErrorEncoder set error respone encoder
+// SetErrorEncoder set error response encoder
 func SetErrorEncoder(c ErrorEncoder) {
-	if c == nil {
-		panic("nil pointer to error encoder")
-	}
-	errorEncoder = c
+	globalContainer.SetErrorEncoder(c)
 }
 
-// SetResponseEncoder set respone encoder
+// SetResponseEncoder set response encoder
 func SetResponseEncoder(c ResponseEncoder) {
-	if c == nil {
-		panic("nil pointer to error encoder")
-	}
-	responseEncoder = c
+	globalContainer.SetResponseEncoder(c)
 }
 
 // SetMultipartFormMaxMemory set multipart max memory

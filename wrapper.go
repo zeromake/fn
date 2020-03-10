@@ -30,30 +30,24 @@ type (
 	// fn represents a handler that contains a bundle of hooks
 	fn struct {
 		container *Container
-		//plugins []PluginFunc
-		adapter adapter
+		adapter   adapter
 	}
 )
 
-var (
-	errorEncoder    ErrorEncoder
-	responseEncoder ResponseEncoder
-)
-
-func failure(ctx context.Context, w http.ResponseWriter, err error) {
+func failure(ctx context.Context, c *Container, w http.ResponseWriter, err error) {
 	statusCode := http.StatusBadRequest
 	if v, ok := UnwrapErrorStatusCode(err); ok {
 		statusCode = v
 	}
 	w.WriteHeader(statusCode)
-	_ = json.NewEncoder(w).Encode(errorEncoder(ctx, err))
+	_ = json.NewEncoder(w).Encode(c.errorEncoder(ctx, err))
 }
 
-func success(ctx context.Context, w http.ResponseWriter, data interface{}) {
+func success(ctx context.Context, c *Container, w http.ResponseWriter, data interface{}) {
 	if reflect.ValueOf(data).Kind() == reflect.Ptr && reflect.ValueOf(data).IsNil() {
 		w.WriteHeader(http.StatusNoContent)
 	} else {
-		_ = json.NewEncoder(w).Encode(responseEncoder(ctx, data))
+		_ = json.NewEncoder(w).Encode(c.responseEncoder(ctx, data))
 	}
 }
 
@@ -68,38 +62,29 @@ func (f *fn) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	for _, b := range f.container.plugins {
 		ctx, err = b(ctx, r)
 		if err != nil {
-			failure(ctx, w, err)
+			failure(ctx, f.container, w, err)
 			return
 		}
 	}
 	resp, err = f.adapter.invoke(ctx, w, r)
 	if err != nil {
-		failure(ctx, w, err)
+		failure(ctx, f.container, w, err)
 		return
 	}
-	success(ctx, w, resp)
+	success(ctx, f.container, w, resp)
 }
 
+//
 func (f *fn) Plugin(before ...PluginFunc) Fn {
-	ff := f.Clone()
+	ff := f.clone()
 	ff.container.Plugin(before...)
 	return ff
 }
 
-func (f *fn) Clone() *fn {
-	c := f.container.New(true)
+func (f *fn) clone() *fn {
+	c := f.container.Clone()
 	return &fn{
 		container: c,
 		adapter:   f.adapter.clone(c),
-	}
-}
-
-func init() {
-	errorEncoder = func(ctx context.Context, err error) interface{} {
-		return err.Error()
-	}
-
-	responseEncoder = func(ctx context.Context, payload interface{}) interface{} {
-		return payload
 	}
 }

@@ -155,7 +155,7 @@ func (a *simplePlainAdapter) invoke(ctx context.Context, w http.ResponseWriter, 
 func (a *simplePlainAdapter) clone(_ *Container) adapter {
 	return &simplePlainAdapter{
 		inContext: a.inContext,
-		method: a.method,
+		method:    a.method,
 		cacheArgs: a.cacheArgs[:],
 	}
 }
@@ -178,8 +178,8 @@ func (a *simpleUnaryAdapter) invoke(ctx context.Context, w http.ResponseWriter, 
 
 func (a *simpleUnaryAdapter) clone(_ *Container) adapter {
 	return &simpleUnaryAdapter{
-		argType: a.argType,
-		method: a.method,
+		argType:   a.argType,
+		method:    a.method,
 		cacheArgs: a.cacheArgs[:],
 	}
 }

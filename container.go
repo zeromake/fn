@@ -9,12 +9,14 @@ import (
 type (
 	supportType map[reflect.Type]contextValuer
 	Container   struct {
-		plugins      []PluginFunc
-		supportTypes supportType
+		plugins         []PluginFunc
+		supportTypes    supportType
+		errorEncoder    ErrorEncoder
+		responseEncoder ResponseEncoder
 	}
 )
 
-func (s supportType) Clone() supportType {
+func (s supportType) clone() supportType {
 	n := make(supportType, len(s))
 	for k, v := range s {
 		n[k] = v
@@ -22,14 +24,17 @@ func (s supportType) Clone() supportType {
 	return n
 }
 
-func (c *Container) New(extend bool) *Container {
-	if extend {
-		return &Container{
-			plugins:      c.plugins[:],
-			supportTypes: c.supportTypes.Clone(),
-		}
+func (c *Container) New() *Container {
+	return New()
+}
+
+func (c *Container) Clone() *Container {
+	return &Container{
+		plugins:         c.plugins[:],
+		supportTypes:    c.supportTypes.clone(),
+		responseEncoder: c.responseEncoder,
+		errorEncoder:    c.errorEncoder,
 	}
-	return &Container{}
 }
 
 func (c *Container) Wrap(f interface{}) Fn {
@@ -86,7 +91,18 @@ func (c *Container) Plugin(before ...PluginFunc) *Container {
 	return c
 }
 
-func (c *Container) RequestPlugin(p interface{}) *Container {
+// buildSupportTypesFunc 生成对应
+func buildSupportTypesFunc(vv reflect.Value) contextValuer {
+	return func(ctx context.Context, r *http.Request) (value reflect.Value, err error) {
+		v := vv.Call([]reflect.Value{reflect.ValueOf(ctx), reflect.ValueOf(r)})
+		if v[1].IsNil() {
+			return v[0], nil
+		}
+		return v[0], v[1].Interface().(error)
+	}
+}
+
+func (c *Container) requestPlugin(p interface{}) *Container {
 	if p == nil {
 		return c
 	}
@@ -102,12 +118,14 @@ func (c *Container) RequestPlugin(p interface{}) *Container {
 		panic("return must is {{data}}, error")
 	}
 	out := t.Out(0)
-	c.supportTypes[out] = func(ctx context.Context, r *http.Request) (value reflect.Value, err error) {
-		v := vv.Call([]reflect.Value{reflect.ValueOf(ctx), reflect.ValueOf(r)})
-		if v[1].IsNil() {
-			return v[0], nil
-		}
-		return v[0], v[1].Interface().(error)
+	f := buildSupportTypesFunc(vv)
+	c.supportTypes[out] = f
+	return c
+}
+
+func (c *Container) RequestPlugin(plugins ...interface{}) *Container {
+	for _, p := range plugins {
+		c.requestPlugin(p)
 	}
 	return c
 }
@@ -122,10 +140,31 @@ func (c *Container) isBuiltinType(t reflect.Type) bool {
 	return ok
 }
 
-func NewGroup() *Container {
-	return globalContainer.New(true)
+func (c *Container) SetErrorEncoder(e ErrorEncoder) {
+	if e == nil {
+		panic("nil pointer to error encoder")
+	}
+	c.errorEncoder = e
 }
 
-func NewContainer() *Container {
-	return globalContainer.New(false)
+// SetResponseEncoder set respone encoder
+func (c *Container) SetResponseEncoder(r ResponseEncoder) {
+	if r == nil {
+		panic("nil pointer to error encoder")
+	}
+	c.responseEncoder = r
+}
+
+// NewGroup 以继承模式新建容器
+func NewGroup() *Container {
+	return globalContainer.Clone()
+}
+
+// New 新建一个空白容器
+func New() *Container {
+	return &Container{
+		supportTypes:    supportType{},
+		responseEncoder: defaultResponseEncoder,
+		errorEncoder:    defaultErrorEncoder,
+	}
 }
