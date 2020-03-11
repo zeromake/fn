@@ -127,7 +127,7 @@ func (a *genericAdapter) clone(container *Container) adapter {
 	}
 }
 
-func (a *genericAdapter) invoke(ctx context.Context, w http.ResponseWriter, r *http.Request) (interface{}, error) {
+func (a *genericAdapter) invoke(ctx context.Context, _ http.ResponseWriter, r *http.Request) (interface{}, error) {
 	values, err := a.invokeParams(ctx, r)
 
 	results := a.method.Call(values)
@@ -138,7 +138,7 @@ func (a *genericAdapter) invoke(ctx context.Context, w http.ResponseWriter, r *h
 	return payload, err
 }
 
-func (a *simplePlainAdapter) invoke(ctx context.Context, w http.ResponseWriter, r *http.Request) (interface{}, error) {
+func (a *simplePlainAdapter) invoke(ctx context.Context, _ http.ResponseWriter, _ *http.Request) (interface{}, error) {
 	if a.inContext {
 		a.cacheArgs[0] = reflect.ValueOf(ctx)
 	}
@@ -160,7 +160,7 @@ func (a *simplePlainAdapter) clone(_ *Container) adapter {
 	}
 }
 
-func (a *simpleUnaryAdapter) invoke(ctx context.Context, w http.ResponseWriter, r *http.Request) (interface{}, error) {
+func (a *simpleUnaryAdapter) invoke(_ context.Context, _ http.ResponseWriter, r *http.Request) (interface{}, error) {
 	data := reflect.New(a.argType.Elem()).Interface()
 	err := json.NewDecoder(r.Body).Decode(data)
 	if err != nil {

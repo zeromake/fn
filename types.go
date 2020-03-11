@@ -126,13 +126,3 @@ func postFromPtrValuer(_ context.Context, r *http.Request) (*PostForm, error) {
 func requestValuer(_ context.Context, r *http.Request) (*http.Request, error) {
 	return r, nil
 }
-
-//func isBuiltinType(t reflect.Type) bool {
-//	_, ok := supportTypes[t]
-//	return ok
-//}
-//
-//func isRequestType(t reflect.Type) bool {
-//	_, ok := supportRequestTypes[t]
-//	return ok
-//}
